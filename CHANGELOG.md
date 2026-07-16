@@ -1,3 +1,7 @@
+## 0.0.4
+
+* Added null-safety support
+
 ## 0.0.3
 
 * Fixed a `BuildContext` assertion error by allowing `context` to be passed to `pickCompressAndUpload`.
