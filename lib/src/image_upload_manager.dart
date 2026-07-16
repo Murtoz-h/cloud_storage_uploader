@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -16,8 +17,9 @@ import 'image_local_saver.dart';
 ///
 /// **Main Pipelines**:
 /// - [pickCompressAndUpload]: The complete flow from user selection to cloud storage.
-/// - [compressAndUpload]: For when you already have an image [File] that needs uploading.
-/// - [uploadProfileOrGenericImageIfLocal]: Smartly handles mixed URLs/local paths (e.g., for user profile updates).
+/// - [compressAndUploadFile]: For when you already have an image [File] that needs uploading.
+/// - [compressAndUploadBytes]: For when you have an image in memory as [Uint8List].
+/// - [uploadIfLocal]: Smartly handles mixed URLs/local paths (e.g., for user profile updates).
 ///
 /// **Standalone Utilities**:
 /// For more granular control, the manager exposes individual tools:
@@ -42,12 +44,16 @@ class ImageUploadManager {
   /// or null if the operation was cancelled or failed.
   static Future<ImageUploadResult?> pickCompressAndUpload({
     required String storagePath,
+    BuildContext? context,
     ImageSource? source,
     ImageCompressConfig config = const ImageCompressConfig(),
     Map<String, String>? customMetadata,
   }) async {
     try {
-      final File? original = await ImageCompressor.pickImage(source: source);
+      final File? original = await ImageCompressor.pickImage(
+        context: context,
+        source: source,
+      );
       if (original == null) return null; // user cancelled picking.
 
       final File compressed = await ImageCompressor.compressFile(
@@ -80,7 +86,7 @@ class ImageUploadManager {
   /// - [customMetadata]: Optional custom metadata to attach.
   ///
   /// Returns an [ImageUploadResult] or null if the operation failed.
-  static Future<ImageUploadResult?> compressAndUpload(
+  static Future<ImageUploadResult?> compressAndUploadFile(
     File original, {
     required String storagePath,
     ImageCompressConfig config = const ImageCompressConfig(),
@@ -106,6 +112,40 @@ class ImageUploadManager {
     }
   }
 
+  /// Compresses a [Uint8List] (e.g., from memory or web) and uploads it to Firebase Storage.
+  ///
+  /// - [original]: The raw bytes to be compressed and uploaded.
+  /// - [storagePath]: The target path in Firebase Storage.
+  /// - [config]: Settings for compression.
+  /// - [customMetadata]: Optional custom metadata to attach.
+  ///
+  /// Returns an [ImageUploadResult] or null if the operation failed.
+  static Future<ImageUploadResult?> compressAndUploadBytes(
+    Uint8List original, {
+    required String storagePath,
+    ImageCompressConfig config = const ImageCompressConfig(),
+    Map<String, String>? customMetadata,
+  }) async {
+    try {
+      final Uint8List compressed = await ImageCompressor.compressBytes(
+        original,
+        config: config,
+      );
+
+      return await ImageStorageUploader.uploadBytes(
+        original,
+        compressed,
+        storagePath: storagePath,
+        format: config.format,
+        customMetadata: customMetadata,
+      );
+    } catch (e, stackTrace) {
+      debugPrint('[ImageUploadManager] Upload failed for bytes: $e');
+      debugPrint(stackTrace.toString());
+      return null;
+    }
+  }
+
   /// A smart utility to upload an image only if it is a local file.
   ///
   /// When dealing with forms (like an edit profile screen), the current image path might be
@@ -118,7 +158,7 @@ class ImageUploadManager {
   /// - [storagePath]: The target path in Firebase Storage if an upload occurs.
   ///
   /// Returns the remote URL string (either the original or the newly uploaded one).
-  static Future<String?> uploadProfileOrGenericImageIfLocal(
+  static Future<String?> uploadIfLocal(
     String? localOrRemotePath, {
     required String storagePath,
     ImageCompressConfig config = const ImageCompressConfig(),
@@ -142,7 +182,7 @@ class ImageUploadManager {
       return localOrRemotePath;
     }
 
-    final result = await compressAndUpload(
+    final result = await compressAndUploadFile(
       file,
       storagePath: storagePath,
       config: config,
@@ -179,9 +219,19 @@ class ImageUploadManager {
   /// Compresses an existing [File] and saves it permanently to the app's documents directory.
   static const saveFileLocal = ImageLocalSaver.saveFile;
 
+  /// Saves raw image bytes permanently to the app's documents directory.
+  static const saveBytesLocal = ImageLocalSaver.saveBytes;
+
   /// Uploads a [compressed] file to Firebase Storage.
   ///
   /// Attaches the correct content-type based on the given `format`.
   /// The `original` file is only used to compute size savings stats.
   static const upload = ImageStorageUploader.upload;
+
+  /// Uploads raw [compressed] bytes to Firebase Storage.
+  ///
+  /// Attaches the correct content-type based on the given `format`.
+  /// The `original` bytes are only used to compute size savings stats.
+  /// Most of time its not going to use
+  static const uploadBytes = ImageStorageUploader.uploadBytes;
 }

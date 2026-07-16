@@ -85,7 +85,7 @@ import 'dart:io';
 import 'utils/image_upload/image_upload_manager.dart';
 
 Future<void> uploadCachedFile(File myExistingFile) async {
-  final result = await ImageUploadManager.compressAndUpload(
+  final result = await ImageUploadManager.compressAndUploadFile(
     myExistingFile,
     storagePath: 'cache_uploads/file.jpg',
   );

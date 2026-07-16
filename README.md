@@ -75,7 +75,7 @@ import 'dart:io';
 import 'package:cloud_storage_uploader/cloud_storage_uploader.dart';
 
 Future<void> uploadExistingFile(File myFile) async {
-  final result = await ImageUploadManager.compressAndUpload(
+  final result = await ImageUploadManager.compressAndUploadFile(
     myFile,
     storagePath: 'uploads/my_image.jpg',
   );
@@ -94,7 +94,7 @@ When updating a user's profile, the image path might be an existing remote URL o
 import 'package:cloud_storage_uploader/cloud_storage_uploader.dart';
 
 Future<void> updateProfile(String currentImageUrlOrLocalPath) async {
-  final newUrl = await ImageUploadManager.uploadProfileOrGenericImageIfLocal(
+  final newUrl = await ImageUploadManager.uploadIfLocal(
     currentImageUrlOrLocalPath,
     storagePath: 'users/123/profile.jpg',
   );

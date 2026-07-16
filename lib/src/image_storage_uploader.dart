@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -57,6 +58,63 @@ class ImageStorageUploader {
 
     debugPrint(
       '[ImageStorageUploader] ${origKb}KB → ${compKb}KB (saved $saved%)',
+    );
+
+    return ImageUploadResult(
+      downloadUrl: url,
+      originalSizeKb: origKb,
+      compressedSizeKb: compKb,
+      savedPercent: saved,
+    );
+  }
+
+  /// Upload raw image bytes to Firebase Storage at [storagePath].
+  /// Dynamically assigns metadata content-type depending on the ImageCompressFormat.
+  /// Returns [ImageUploadResult] with download URL and size info.
+  static Future<ImageUploadResult> uploadBytes(
+    Uint8List original,
+    Uint8List compressed, {
+    required String storagePath,
+    required CompressFormat format,
+    Map<String, String>? customMetadata,
+  }) async {
+    final ref = FirebaseStorage.instance.ref(storagePath);
+
+    String contentType;
+    switch (format) {
+      case CompressFormat.png:
+        contentType = 'image/png';
+        break;
+      case CompressFormat.webp:
+        contentType = 'image/webp';
+        break;
+      case CompressFormat.heic:
+        contentType = 'image/heic';
+        break;
+      case CompressFormat.jpeg:
+        contentType = 'image/jpeg';
+        break;
+    }
+
+    final metadata = SettableMetadata(
+      contentType: contentType,
+      customMetadata: customMetadata,
+    );
+
+    final task = await ref.putData(compressed, metadata);
+    final url = await task.ref.getDownloadURL();
+
+    final originalLength = original.length;
+    final compressedLength = compressed.length;
+
+    final origKb = (originalLength / 1024).round();
+    final compKb = (compressedLength / 1024).round();
+    final saved = originalLength > 0
+        ? ((1 - compressedLength / originalLength) * 100).round()
+        : 0;
+
+    debugPrint(
+      '[ImageStorageUploader] Bytes: ${origKb}KB → ${compKb}KB (saved $saved%)',
     );
 
     return ImageUploadResult(

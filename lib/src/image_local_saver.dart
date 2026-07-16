@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -14,10 +15,14 @@ class ImageLocalSaver {
   /// Returns saved [File], or null if user cancels or save fails.
   static Future<File?> pickAndSave({
     required String relativePath,
-    ImageSource source = ImageSource.gallery,
+    BuildContext? context,
+    ImageSource? source,
     ImageCompressConfig config = const ImageCompressConfig(),
   }) async {
-    final File? original = await ImageCompressor.pickImage(source: source);
+    final File? original = await ImageCompressor.pickImage(
+      context: context,
+      source: source,
+    );
     if (original == null) return null;
     return _compressAndSave(original, relativePath, config);
   }
@@ -57,22 +62,22 @@ class ImageLocalSaver {
     }
   }
 
-  ///Its not used anywhere
-  // static Future<File?> saveBytes({
-  //   required Uint8List bytes,
-  //   required String relativePath,
-  // }) async {
-  //   try {
-  //     final appDir = await getApplicationDocumentsDirectory();
-  //     final destPath = '${appDir.path}/$relativePath';
-  //     await File(destPath).parent.create(recursive: true);
-  //     final saved = await File(destPath).writeAsBytes(bytes);
-  //     debugPrint(
-  //         '[ImageLocalSaver] saveBytes → $destPath (${bytes.length ~/ 1024}KB)');
-  //     return saved;
-  //   } catch (e) {
-  //     debugPrint('[ImageLocalSaver] saveBytes Failed: $e');
-  //     return null;
-  //   }
-  // }
+  /// Save raw bytes to the app documents directory.
+  static Future<File?> saveBytes({
+    required Uint8List bytes,
+    required String relativePath,
+  }) async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final destPath = '${appDir.path}/$relativePath';
+      await File(destPath).parent.create(recursive: true);
+      final saved = await File(destPath).writeAsBytes(bytes);
+      debugPrint(
+          '[ImageLocalSaver] saveBytes → $destPath (${bytes.length ~/ 1024}KB)');
+      return saved;
+    } catch (e) {
+      debugPrint('[ImageLocalSaver] saveBytes Failed: $e');
+      return null;
+    }
+  }
 }
