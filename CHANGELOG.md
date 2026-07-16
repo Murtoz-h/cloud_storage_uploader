@@ -1,3 +1,3 @@
 ## 0.0.1
 
-* TODO: Describe initial release.
+* Initial release: Includes full image upload pipeline with compression, picking, and Firebase Storage integration.

@@ -1,7 +1,8 @@
 name: cloud_storage_uploader
-description: "A new Flutter package project."
+description: "A comprehensive Flutter package for seamlessly handling image picking, compression, and uploading to Firebase Storage."
 version: 0.0.1
-homepage:
+homepage: https://github.com/Murtoz-h/cloud_storage_uploader
+
 
 environment:
   sdk: ^3.12.2
