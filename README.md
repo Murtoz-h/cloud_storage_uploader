@@ -46,8 +46,9 @@ The easiest way to let a user pick an image and upload it to a specific path in 
 ```dart
 import 'package:cloud_storage_uploader/cloud_storage_uploader.dart';
 
-Future<void> uploadProfilePicture() async {
+Future<void> uploadProfilePicture(BuildContext context) async {
   final result = await ImageUploadManager.pickCompressAndUpload(
+    context: context, // Required if source is not provided to show the selection bottom sheet
     storagePath: 'users/123/profile.jpg',
     config: const ImageCompressConfig(
       quality: 85,
@@ -66,7 +67,28 @@ Future<void> uploadProfilePicture() async {
 }
 ```
 
-### 2. Compress and Upload an Existing File
+> **Note:** Whenever you use a method that prompts the user to pick an image (like `pickCompressAndUpload` or `pickImage`) and you **do not** specify an `ImageSource`, you **must** provide a `BuildContext`. This allows the package to display a bottom sheet asking the user to choose between their camera and gallery.
+
+### 2. Pick and Compress Locally (No automatic upload)
+
+If you have a custom backend or just want the lightweight file for local processing without immediately uploading to Firebase:
+
+```dart
+import 'package:cloud_storage_uploader/cloud_storage_uploader.dart';
+
+Future<void> pickAndCompressImage(BuildContext context) async {
+  final file = await ImageUploadManager.pickAndCompress(
+    context: context,
+  );
+  
+  if (file != null) {
+    print('Picked and compressed! Path: ${file.path}');
+    // Do something with the file locally or upload to custom API
+  }
+}
+```
+
+### 3. Compress and Upload an Existing File
 
 If you already have a `File` object (e.g., from another picker):
 

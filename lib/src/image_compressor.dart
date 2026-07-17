@@ -13,6 +13,10 @@ class ImageCompressor {
   static final _picker = ImagePicker();
 
   /// Pick from gallery or camera, return raw [File].
+  /// 
+  /// Note: If [source] is not provided, a [context] must be provided so the library 
+  /// can display a bottom sheet to let the user select between camera and gallery.
+  /// 
   /// Returns null if user cancels.
   static Future<File?> pickImage({
     BuildContext? context,

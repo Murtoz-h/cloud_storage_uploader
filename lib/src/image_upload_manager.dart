@@ -36,6 +36,7 @@ class ImageUploadManager {
   /// and returns null if the user cancelled picking or if an error occurred.
   ///
   /// - [storagePath]: The exact path in Firebase Storage where the file will be saved (e.g., `'users/123/profile.jpg'`).
+  /// - [context]: Required if [source] is not provided, used to show the selection bottom sheet.
   /// - [source]: The source of the image (camera or gallery). If null, a bottom sheet will prompt the user.
   /// - [config]: Settings for compression (quality, max width/height, format).
   /// - [customMetadata]: Optional custom metadata to attach to the Firebase Storage object.
@@ -70,6 +71,39 @@ class ImageUploadManager {
       );
     } catch (e, stackTrace) {
       debugPrint('[ImageUploadManager] Pipeline failed: $e');
+      debugPrint(stackTrace.toString());
+      return null;
+    }
+  }
+
+  /// Picks an image from the gallery or camera and compresses it immediately.
+  ///
+  /// This is highly useful when you want to handle the upload yourself (e.g., to a custom REST API)
+  /// or just need a memory-efficient file for local processing, without automatically uploading it to Firebase.
+  ///
+  /// - [context]: Required if [source] is not provided, used to show the selection bottom sheet.
+  /// - [source]: The source of the image. If null, a bottom sheet will prompt the user.
+  /// - [config]: Settings for compression (quality, max width/height, format).
+  ///
+  /// Returns the compressed [File], or null if the user cancelled or an error occurred.
+  static Future<File?> pickAndCompress({
+    BuildContext? context,
+    ImageSource? source,
+    ImageCompressConfig config = const ImageCompressConfig(),
+  }) async {
+    try {
+      final File? original = await ImageCompressor.pickImage(
+        context: context,
+        source: source,
+      );
+      if (original == null) return null; // user cancelled picking.
+
+      return await ImageCompressor.compressFile(
+        original,
+        config: config,
+      );
+    } catch (e, stackTrace) {
+      debugPrint('[ImageUploadManager] Pick and compress failed: $e');
       debugPrint(stackTrace.toString());
       return null;
     }

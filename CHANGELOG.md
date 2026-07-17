@@ -1,3 +1,9 @@
+## 1.0.0
+
+* **Stable Release**: Upgraded to version 1.0.0.
+* Added `pickAndCompress` method to easily pick and compress an image without immediately uploading it.
+* Enhanced documentation regarding `BuildContext` requirements when not specifying an `ImageSource`.
+
 ## 0.0.4
 
 * Added null-safety support
